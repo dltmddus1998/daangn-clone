@@ -24,7 +24,7 @@ module.exports = {
       'error',
       {
         endOfLine: 'auto',
-        parser: 'false'
+        parser: 'false',
       },
     ],
   },
