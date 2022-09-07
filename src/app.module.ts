@@ -5,6 +5,8 @@ import { typeORMConfig } from './configs/typeorm.config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { UserModule } from './users/user.module';
+import { ChatModule } from './chats/chat.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -14,9 +16,18 @@ import { UserModule } from './users/user.module';
       autoSchemaFile: 'schema.gql',
       debug: true,
       playground: true,
+      context: ({ req, connection }) => {
+        if (req) {
+          return req;
+        } else {
+          return connection;
+        }
+      },
     }),
     PostModule,
     UserModule,
+    ChatModule,
+    EventsModule,
   ],
 })
 export class AppModule {}

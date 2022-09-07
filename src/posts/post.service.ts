@@ -21,7 +21,7 @@ import { UpdateDealStateDto } from './dto/updateDealState.dto';
 export class PostService {
   constructor(
     @InjectRepository(PostRepository)
-    private postRepository: PostRepository, // @InjectRepository(PostsComplaint) // private postsComplaintRepository: Repository<PostsComplaint>, // @InjectRepository(PriceOffer) // private priceOfferRepository: Repository<PriceOffer>,
+    private postRepository: PostRepository,
   ) {}
 
   async createPost(createPostDto: CreatePostDto): Promise<Post> {

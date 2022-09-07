@@ -1,7 +1,8 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Post } from './post.entity';
-import { ProcessState } from 'src/processStates/processState.entity';
+// import { ProcessState } from 'src/processStates/processState.entity';
+import { ProcessState } from '../processStates/processState.entity';
 import { ComplaintReason } from 'src/complaintReasons/complaintReason.entity';
 
 @Entity()
