@@ -25,7 +25,7 @@ export class MypageRepository extends Repository<Followings> {
       .createQueryBuilder('followings')
       .innerJoinAndSelect('followings.followingUser', 'user')
       .innerJoinAndSelect('followings.followerUser', 'subjectUser')
-      .where('user.phoneNumber = :phoneNumber', { phoneNumber: user.phoneNumber })
+      .where('user.userName = :userName', { userName: user.userName })
       .orderBy('followings.createdAt', 'DESC')
       .offset((page - 1) * perPage)
       .limit(perPage)
