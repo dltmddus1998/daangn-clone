@@ -16,7 +16,7 @@ export class PostsLikeRecord extends BaseEntity {
   post!: Post;
 
   @Field(() => User)
-  @JoinColumn({ name: 'userPhoneNumber' })
+  @JoinColumn({ name: 'userName' })
   @ManyToOne(type => User, user => user.postsLikeRecord, { eager: true, onUpdate: 'CASCADE', onDelete: 'CASCADE' })
   user!: User;
 }
