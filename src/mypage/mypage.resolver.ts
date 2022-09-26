@@ -1,3 +1,4 @@
+import { PostsLikeRecord } from 'src/posts/postsLikeRecord.entity';
 import { ParseBoolPipe, UseGuards } from '@nestjs/common';
 import { Resolver, Query, Args, Mutation } from '@nestjs/graphql';
 import { Followings } from './followings.entity';
@@ -9,7 +10,6 @@ import { User } from 'src/users/user.entity';
 import { Post } from 'src/posts/post.entity';
 import { PurchaseHistory } from './purchaseHistory.entity';
 import { JwtAuthGuard } from 'src/users/guards/jwtAuth.guard';
-import { PhoneNumberValidationPipe } from 'src/users/validations/phoneNumber.pipe';
 import { GetOtherProfileDto } from './dto/getOtherProfile.dto';
 
 @Resolver()
@@ -24,8 +24,8 @@ export class MypageResolver {
   }
 
   // 구매리스트 추가
-  @Mutation(() => PurchaseHistory)
-  buy(@GetUser() user: User, @Args('purchaseHistoryDto') purchaseHistoryDto: PurchaseHistoryDto): Promise<PurchaseHistory> {
+  @Mutation(() => Post)
+  buy(@GetUser() user: User, @Args('purchaseHistoryDto') purchaseHistoryDto: PurchaseHistoryDto): Promise<Post> {
     return this.mypageService.buy(user, purchaseHistoryDto);
   }
 
@@ -42,8 +42,8 @@ export class MypageResolver {
   }
 
   // 특정 사용자 관심목록 조회
-  @Query(() => [Post])
-  getWatchListOfUser(@GetUser() user: User, @Args('page') page: number, @Args('perPage') perPage: number): Promise<Post[]> {
+  @Query(() => [PostsLikeRecord])
+  getWatchListOfUser(@GetUser() user: User, @Args('page') page: number, @Args('perPage') perPage: number): Promise<PostsLikeRecord[]> {
     return this.mypageService.getWatchListOfUser(user, page, perPage);
   }
 
@@ -73,7 +73,7 @@ export class MypageResolver {
 
   // 내 프로필 조회하기
   @Query(() => User)
-  getMyProfile(@GetUser() user: User, @Args('phoneNumber', PhoneNumberValidationPipe) phoneNumber: String): Promise<Object> {
+  getMyProfile(@GetUser() user: User, @Args('userName') userName: string): Promise<Object> {
     return this.mypageService.getMyProfile(user);
   }
 

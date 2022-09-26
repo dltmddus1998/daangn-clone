@@ -85,7 +85,7 @@ export class Post extends BaseEntity {
   @ManyToOne(type => Location, location => location.posts, { eager: true, onUpdate: 'RESTRICT', onDelete: 'RESTRICT' })
   location!: Location;
 
-  @Field()
+  @Field(() => DealState)
   @JoinColumn({ name: 'dealStateId' })
   @ManyToOne(type => DealState, dealState => dealState.posts, { eager: true, onUpdate: 'CASCADE', onDelete: 'CASCADE' })
   dealState!: DealState;

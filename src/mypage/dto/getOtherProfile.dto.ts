@@ -1,11 +1,10 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsNotEmpty, isNotEmpty } from 'class-validator';
-import { IsPhoneNumber } from 'src/users/validations/phoneNumber.decorator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 @InputType()
 export class GetOtherProfileDto {
   @Field()
   @IsNotEmpty()
-  @IsPhoneNumber('isPhoneNumber')
-  phoneNumber!: string;
+  @IsString()
+  userName!: string;
 }

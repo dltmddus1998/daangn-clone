@@ -1,3 +1,5 @@
+import { PostsLikeRecord } from 'src/posts/postsLikeRecord.entity';
+import { UpdateDealStateDto } from './../posts/dto/updateDealState.dto';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/user.entity';
@@ -27,22 +29,18 @@ export class MypageService {
     return await this.mypageRepository.getHiddenPostsList(user, page, perPage);
   }
 
-  async buy(user: User, purchaseHistoryDto: PurchaseHistoryDto): Promise<PurchaseHistory> {
+  async buy(user: User, purchaseHistoryDto: PurchaseHistoryDto): Promise<Post> {
     /**
      * 특정 게시글 물건 구매 처리하기
      *
      * @author 이승연(dltmddus1998)
-     * @param {user, post} 로그인한 유저, 게시글
-     * @return {PurchaseHistory} 구매내역 반환
-     * @throws {NotFoundException} 구매내역이 추가되지 않아 조회되지 않을 때 예외 처리
+     * @param {user, purchaseHistoryDto} 로그인한 유저, 게시글 번호
+     * @return {Post} 해당 게시글 반환
+     * @throws {BadRequestException}
      */
-    const insertId = await this.mypageRepository.buy(user, purchaseHistoryDto);
-    const found = PurchaseHistory.findOne(insertId);
-    if (!found) {
-      throw new NotFoundException(`${insertId}의 구매내역이 제대로 추가되지 않았습니다.`);
-    }
-    return found;
+    return await this.mypageRepository.buyTransaction(user, purchaseHistoryDto);
   }
+
   async getBuyingListsOfUser(user: User, page: number, perPage: number): Promise<PurchaseHistory[]> {
     /**
      * 구매리스트 조회하기
@@ -66,7 +64,7 @@ export class MypageService {
     return await this.mypageRepository.getSellingListOfUser(user, page, perPage);
   }
 
-  async getWatchListOfUser(user: User, page: number, perPage: number): Promise<Post[]> {
+  async getWatchListOfUser(user: User, page: number, perPage: number): Promise<PostsLikeRecord[]> {
     /**
      * 관심목록 조회하기
      *
@@ -77,8 +75,8 @@ export class MypageService {
     return await this.mypageRepository.getWatchListOfUser(user, page, perPage);
   }
 
-  async getUserByPhoneNumber({ phoneNumber }: { phoneNumber: string }): Promise<User> {
-    return await User.findOne({ where: { phoneNumber: phoneNumber } });
+  async getUserByUserName({ userName }: { userName: string }): Promise<User> {
+    return await User.findOne({ where: { userName } });
   }
 
   async setMarketingInfoAgree(user: User, marketingInfoAgree: boolean) {
@@ -90,7 +88,7 @@ export class MypageService {
      * @returns {User} 해당 유저 반환
      */
     await this.mypageRepository.updateMarketingInfo(user, marketingInfoAgree);
-    return await this.getUserByPhoneNumber({ phoneNumber: user.phoneNumber });
+    return await this.getUserByUserName({ userName: user.userName });
   }
 
   async getFollowingsById(followingId: number): Promise<Followings> {
@@ -112,9 +110,10 @@ export class MypageService {
      * @throws {NotFoundException} followingId에 해당하는 팔로잉이 없을 때 예외 처리
      */
     const { followerUser } = followDto;
-    const followerUserFind = await User.findOne({ where: { phoneNumber: followerUser } });
+    const followerUserFind = await User.findOne({ where: { userName: followerUser } });
+    console.log(followerUserFind);
 
-    if (followerUser.toString() === user.phoneNumber) {
+    if (followerUser.toString() === user.userName) {
       throw new BadRequestException(`본인을 팔로우할 수 없습니다.`);
     } else if (!followerUserFind) {
       throw new BadRequestException(`존재하지 않는 유저입니다.`);
@@ -194,8 +193,8 @@ export class MypageService {
      * 유저테이블: 해당 유저의 닉네임, 프로필 이미지, 매너온도, 응답률
      * TODO: 받은 매너 평가, 받은 거래 후기
      */
-    const { phoneNumber } = getOtherProfileDto;
-    const otherProfileFromUser = await this.mypageRepository.getOtherProfileFromUser(phoneNumber);
+    const { userName } = getOtherProfileDto;
+    const otherProfileFromUser = await this.mypageRepository.getOtherProfileFromUser(userName);
     // const data = {
     //   otherProfileFromUser,
     // };

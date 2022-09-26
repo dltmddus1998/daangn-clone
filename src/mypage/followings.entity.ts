@@ -10,12 +10,12 @@ export class Followings extends BaseEntity {
   followingId: number;
 
   @Field(() => User)
-  @JoinColumn({ name: 'userPhoneNumber' })
+  @JoinColumn({ name: 'userName' })
   @ManyToOne(type => User, user => user.followings, { eager: true, onUpdate: 'CASCADE', onDelete: 'CASCADE' })
   followingUser!: User;
 
   @Field(() => User)
-  @JoinColumn({ name: 'subjectUserPhoneNumber' })
+  @JoinColumn({ name: 'subjectUserName' })
   @ManyToOne(type => User, user => user.followers, { eager: true, onUpdate: 'CASCADE', onDelete: 'CASCADE' })
   followerUser!: User;
 
