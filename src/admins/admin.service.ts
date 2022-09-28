@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { User } from 'src/users/user.entity';
+import { ChatComplaints } from 'src/chats/chatComplaints.entity';
+import { UserComplaints } from 'src/chats/userComplaints.entity';
+import { ChatComplaintsRepository } from './../chats/repositories/chatComplaints.repository';
+import { UserComplaintsRepository } from './../users/repositories/userComplaints.repository';
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AdminRepository } from './repositories/admin.repository';
@@ -7,7 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { AdminDto } from './dto/admin.dto';
 import { Admin } from './entities/admin.entity';
 import { AdminAuthorityRepository } from './repositories/adminAuthority.repository';
-import { EntityManager, getConnection } from 'typeorm';
+import { EntityManager, getConnection, getRepository } from 'typeorm';
 import { SearchPostComplaintDto } from './dto/searchPostComplaint.dto';
 import { PostComplaints } from 'src/posts/postComplaints.entity';
 import { PostComplaintsRepository } from 'src/posts/repositories/postComplaint.repository';
@@ -21,6 +26,10 @@ export class AdminService {
     private adminAuthorityRepository: AdminAuthorityRepository,
     @InjectRepository(PostComplaintsRepository)
     private postComplaintsRepository: PostComplaintsRepository,
+    @InjectRepository(UserComplaintsRepository)
+    private userComplaintsRepository: UserComplaintsRepository,
+    @InjectRepository(ChatComplaintsRepository)
+    private chatComplaintsRepository: ChatComplaintsRepository,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -104,5 +113,104 @@ export class AdminService {
 
   async getPostComplaints(searchPostComplaintDto: SearchPostComplaintDto): Promise<PostComplaints[]> {
     return await this.postComplaintsRepository.getPostComplaints(searchPostComplaintDto);
+  }
+
+  // 2. "신고 검토 중"으로 업데이트
+  async examinePostReport(complaintId: number): Promise<PostComplaints> {
+    /**
+     * 게시글 신고 검토
+     *
+     * @author 이승연(dltmddus1998)
+     * @param {complaintId}
+     * @return
+     * @throws
+     */
+    const postComplaint = await this.postComplaintsRepository.getPostComplaintById(complaintId);
+    if (!postComplaint) {
+      throw new NotFoundException('존재하지 않는 신고 내용입니다.');
+    }
+    if (postComplaint.processState.processStateId === 2) {
+      throw new BadRequestException('이미 신고 검토 중인 게시글입니다.');
+    }
+    await this.postComplaintsRepository.examinePostReport(complaintId);
+    return await this.postComplaintsRepository.getPostComplaintById(complaintId);
+  }
+
+  async examineUserReport(complaintId: number): Promise<UserComplaints> {
+    /**
+     * 유저 신고 검토
+     *
+     * @author 이승연(dltmddus1998)
+     * @param {complaintId}
+     * @return {UserComplaints}
+     * @throws {NotFoundException} 존재하지 않는 신고
+     * @throws {BadRequestException} 이미 신고 검토 중
+     */
+    const userComplaint = await this.userComplaintsRepository.getUserComplaintById(complaintId);
+    if (!userComplaint) {
+      throw new NotFoundException('존재하지 않는 신고 내용입니다.');
+    }
+    if (userComplaint.processState.processStateId === 2) {
+      throw new BadRequestException('이미 신고 검토 중인 유저입니다.');
+    }
+    await this.userComplaintsRepository.examineUserReport(complaintId);
+    return await this.userComplaintsRepository.getUserComplaintById(complaintId);
+  }
+
+  async examineChatReport(complaintId: number) {
+    /**
+     * 채팅 신고 검토
+     *
+     * @author 이승연(dltmddus1998)
+     * @param {complaintId}
+     * @return {ChatComplaints}
+     * @throws {NotFoundException} 존재하지 않는 신고
+     * @throws {BadRequestException} 이미 신고 검토 중
+     */
+    const chatComplaint = await this.chatComplaintsRepository.getChatComplaintById(complaintId);
+    if (!chatComplaint) {
+      throw new NotFoundException('존재하지 않는 신고 내용입니다.');
+    }
+    if (chatComplaint.processState.processStateId === 2) {
+      throw new BadRequestException('이미 신고 검토 중인 유저입니다.');
+    }
+    await this.chatComplaintsRepository.examineChatReport(complaintId);
+    return this.chatComplaintsRepository.getChatComplaintById(complaintId);
+  }
+
+  // 3. 신고 검토 완료 허용 후 -> processState 4번으로 처리
+  async dealPostReportBeforeThreeTimes(complaintId: number): Promise<PostComplaints> {
+    /**
+     * 게시글 신고 검토 완료 허용 & 매너지수 감소 및 블라인드 처리 이후 신고 검토 완료 처리
+     *
+     * @author 이승연(dltmddus1998)
+     * @param {complaintId}
+     * @return
+     * @throws {NotFoundException}
+     */
+    const postComplaint = await this.postComplaintsRepository.getPostComplaintById(complaintId);
+    if (!postComplaint) {
+      throw new NotFoundException('존재하지 않는 신고 내용입니다.');
+    }
+    await getConnection().transaction(async (manager: EntityManager) => {
+      await this.postComplaintsRepository.completeReportHandlingOfPost(manager, complaintId);
+      const user = await getRepository(User).findOne(postComplaint.post.user.phoneNumber);
+      await this.userComplaintsRepository.declineMannerTemp(manager, user.userName);
+      await this.postComplaintsRepository.updateBlindState(manager, postComplaint.post.postId);
+      await this.postComplaintsRepository.afterCompleteReportHandlingOfPost(manager, complaintId);
+    });
+    return await this.postComplaintsRepository.getPostComplaintById(complaintId);
+  }
+
+  async dealUserReportBeforeThreeTimes(complaintId: number) {
+    /**
+     * 유저 신고 검토 완료 허용 & 매너지수 감소 및 블라인드 처리 이후 신고 검토 완료 처리
+     *
+     * @author 이승연(dltmddus1998)
+     * @param {}
+     * @return {}
+     * @throws {}
+     *
+     */
   }
 }

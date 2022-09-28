@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/users/user.entity';
-import { UserRepository } from './user.repository';
+import { UserRepository } from './repositories/user.repository';
 import axios from 'axios';
 import { Cache } from 'cache-manager';
 import * as crypto from 'crypto';
