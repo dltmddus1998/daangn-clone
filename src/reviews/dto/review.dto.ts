@@ -1,6 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsBoolean, IsNotEmpty, IsNumber, Length } from 'class-validator';
-import { Post } from 'src/posts/post.entity';
+import { Post } from 'src/posts/entities/post.entity';
 import { MannerItem } from '../entities/mannerItem.entity';
 import { ScoreItem } from '../entities/scoreItem.entity';
 

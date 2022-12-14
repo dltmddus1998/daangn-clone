@@ -2,9 +2,14 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { Admin } from '../entities/admin.entity';
-import { AdminAuthority } from '../entities/adminAuthority.entity';
 import { RoleType } from '../models/role.enum';
 
+/**
+ * resolver 작업을 하는데 필요한 권한을 가지고 있는지 확인
+ *
+ * @author 허정연(golgol22)
+ * @return {boolean}
+ */
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}

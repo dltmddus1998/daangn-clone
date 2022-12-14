@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PurchaseHistory } from 'src/mypage/purchaseHistory.entity';
-import { User } from 'src/users/user.entity';
+import { PurchaseHistory } from 'src/mypage/entities/purchaseHistory.entity';
+import { User } from 'src/users/entities/user.entity';
 import { EntityManager, getConnection, getRepository } from 'typeorm';
 import { ReviewDto } from './dto/review.dto';
 import { BuyerReview } from './entities/buyerReview.entity';
@@ -10,13 +10,22 @@ import { ScoreItem } from './entities/scoreItem.entity';
 import { SelectedMannerItemToBuyer } from './entities/selectedMannerItemToBuyer.entity';
 import { SelectedMannerItemToSeller } from './entities/selectedMannerItemToSeller.entity';
 import { SellerReview } from './entities/sellerReview.entity';
-import { ReviewRepository } from './review.repository';
+import { BuyerReviewRepository } from './repositories/buyerReview.repository';
+import { SelectedMannerItemToBuyerRepository } from './repositories/selectedMannerItemToBuyer.repository';
+import { SelectedMannerItemToSellerRepository } from './repositories/selectedMannerItemToSeller.repository';
+import { SellerReviewRepository } from './repositories/sellerReview.repository';
 
 @Injectable()
 export class ReviewService {
   constructor(
-    @InjectRepository(ReviewRepository)
-    private reviewRepository: ReviewRepository,
+    @InjectRepository(SellerReviewRepository)
+    private sellerReviewRepository: SellerReviewRepository,
+    @InjectRepository(BuyerReviewRepository)
+    private buyerReviewRepository: BuyerReviewRepository,
+    @InjectRepository(SelectedMannerItemToSellerRepository)
+    private selectedMannerItemToSellerRepository: SelectedMannerItemToSellerRepository,
+    @InjectRepository(SelectedMannerItemToBuyerRepository)
+    private selectedMannerItemToBuyerRepository: SelectedMannerItemToBuyerRepository,
   ) {}
 
   async getScoreItemData(): Promise<ScoreItem[]> {
@@ -47,7 +56,7 @@ export class ReviewService {
      * @param {sellerReviewId} 판매자 거래후기 ID
      * @return {SellerReview} 판매자에 대한 리뷰 반환
      */
-    return await getRepository(SellerReview).findOne(sellerReviewId);
+    return await this.sellerReviewRepository.findOne(sellerReviewId);
   }
 
   async getBuyerReviewById(buyerReviewId: number): Promise<BuyerReview> {
@@ -58,7 +67,7 @@ export class ReviewService {
      * @param {buyerReviewId} 구매자 거래후기 ID
      * @return {BuyerReview} 구매자에 대한 리뷰 반환
      */
-    return await getRepository(BuyerReview).findOne(buyerReviewId);
+    return await this.buyerReviewRepository.findOne(buyerReviewId);
   }
 
   private async mannerTempCal(manager: EntityManager, user: User, score: number, selectedMannerItems: any[]) {
@@ -99,15 +108,15 @@ export class ReviewService {
     if (JSON.stringify(purchase.user) !== JSON.stringify(user)) {
       throw new ForbiddenException('본인이 거래한 게시글에 대한 거래후기만 쓸 수 있습니다.');
     }
-    const review = await getRepository(SellerReview).findOne({ where: { post } });
+    const review = await this.sellerReviewRepository.findOne({ where: { post } });
     if (review) {
       throw new BadRequestException('이미 리뷰를 작성하였습니다.');
     }
     let insertId = -1;
     await getConnection()
       .transaction(async (manager: EntityManager) => {
-        insertId = await this.reviewRepository.createSellerReview(manager, reviewDto);
-        await this.reviewRepository.setSelectedMannerItemToSeller(manager, insertId, selectedMannerItems);
+        insertId = await this.sellerReviewRepository.createSellerReview(manager, reviewDto);
+        await this.selectedMannerItemToSellerRepository.setSelectedMannerItemToSeller(manager, insertId, selectedMannerItems);
         await this.mannerTempCal(manager, purchase.post.user, score.scoreItemId, selectedMannerItems);
       })
       .catch(err => {
@@ -138,15 +147,15 @@ export class ReviewService {
     if (JSON.stringify(purchase.post.user) !== JSON.stringify(user)) {
       throw new ForbiddenException('본인이 거래한 게시글에 대한 거래후기만 쓸 수 있습니다.');
     }
-    const review = await getRepository(BuyerReview).findOne({ where: { post } });
+    const review = await this.buyerReviewRepository.findOne({ where: { post } });
     if (review) {
       throw new BadRequestException('이미 리뷰를 작성하였습니다.');
     }
     let insertId = -1;
     await getConnection()
       .transaction(async (manager: EntityManager) => {
-        insertId = await this.reviewRepository.createBuyerReview(manager, reviewDto);
-        await this.reviewRepository.setSelectedMannerItemToBuyer(manager, insertId, selectedMannerItems);
+        insertId = await this.buyerReviewRepository.createBuyerReview(manager, reviewDto);
+        await this.selectedMannerItemToBuyerRepository.setSelectedMannerItemToBuyer(manager, insertId, selectedMannerItems);
         await this.mannerTempCal(manager, purchase.user, score.scoreItemId, selectedMannerItems);
       })
       .catch(err => {
@@ -177,7 +186,7 @@ export class ReviewService {
     if (JSON.stringify(purchase.user) !== JSON.stringify(user)) {
       throw new ForbiddenException('본인이 작성한 거래후기만 수정할 수 있습니다.');
     }
-    const sellerReview = await getRepository(SellerReview).findOne({ where: { post } });
+    const sellerReview = await this.sellerReviewRepository.findOne({ where: { post } });
     if (!sellerReview) {
       throw new NotFoundException('작성된 거래후기가 없습니다.');
     }
@@ -188,8 +197,8 @@ export class ReviewService {
         sellerReview.review = review;
         sellerReview.retransaction = retransaction;
         await manager.save(sellerReview);
-        await getRepository(SelectedMannerItemToSeller).delete({ sellerReview: sellerReview.sellerReviewId });
-        await this.reviewRepository.setSelectedMannerItemToSeller(manager, sellerReview.sellerReviewId, selectedMannerItems);
+        await manager.delete(SelectedMannerItemToSeller, { sellerReview: sellerReview.sellerReviewId });
+        await this.selectedMannerItemToSellerRepository.setSelectedMannerItemToSeller(manager, sellerReview.sellerReviewId, selectedMannerItems);
         await this.mannerTempCal(manager, userMannerTempReset, score.scoreItemId, selectedMannerItems);
       })
       .catch(err => {
@@ -220,7 +229,7 @@ export class ReviewService {
     if (JSON.stringify(purchase.post.user) !== JSON.stringify(user)) {
       throw new ForbiddenException('본인이 작성한 거래후기만 수정할 수 있습니다.');
     }
-    const buyerReview = await getRepository(BuyerReview).findOne({ where: { post } });
+    const buyerReview = await this.buyerReviewRepository.findOne({ where: { post } });
     if (!buyerReview) {
       throw new NotFoundException('작성된 거래후기가 없습니다.');
     }
@@ -231,8 +240,8 @@ export class ReviewService {
         buyerReview.review = review;
         buyerReview.retransaction = retransaction;
         await manager.save(buyerReview);
-        await getRepository(SelectedMannerItemToBuyer).delete({ buyerReview: buyerReview.buyerReviewId });
-        await this.reviewRepository.setSelectedMannerItemToBuyer(manager, buyerReview.buyerReviewId, selectedMannerItems);
+        await manager.delete(SelectedMannerItemToBuyer, { buyerReview: buyerReview.buyerReviewId });
+        await this.selectedMannerItemToBuyerRepository.setSelectedMannerItemToBuyer(manager, buyerReview.buyerReviewId, selectedMannerItems);
         await this.mannerTempCal(manager, userMannerTempReset, score.scoreItemId, selectedMannerItems);
       })
       .catch(err => {
@@ -262,7 +271,7 @@ export class ReviewService {
     if (JSON.stringify(purchase.user) !== JSON.stringify(user)) {
       throw new ForbiddenException('본인이 작성한 거래후기만 수정할 수 있습니다.');
     }
-    const sellerReview = await getRepository(SellerReview).findOne({ where: { post } });
+    const sellerReview = await this.sellerReviewRepository.findOne({ where: { post } });
     if (!sellerReview) {
       throw new NotFoundException('작성된 거래후기가 없습니다.');
     }
@@ -298,7 +307,7 @@ export class ReviewService {
     if (JSON.stringify(purchase.post.user) !== JSON.stringify(user)) {
       throw new ForbiddenException('본인이 작성한 거래후기만 수정할 수 있습니다.');
     }
-    const buyerReview = await getRepository(BuyerReview).findOne({ where: { post } });
+    const buyerReview = await this.buyerReviewRepository.findOne({ where: { post } });
     if (!buyerReview) {
       throw new NotFoundException('작성된 거래후기가 없습니다.');
     }

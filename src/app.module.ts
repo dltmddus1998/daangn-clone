@@ -10,6 +10,7 @@ import * as config from 'config';
 import { MypageModule } from './mypage/mypage.module';
 import { ReviewModule } from './reviews/review.module';
 import { AdminModule } from './admins/admin.module';
+import { ChatModule } from './chats/chat.module';
 
 const uploadConfig: any = config.get('upload');
 
@@ -27,6 +28,7 @@ const uploadConfig: any = config.get('upload');
     MypageModule,
     ReviewModule,
     AdminModule,
+    ChatModule,
   ],
 })
 export class AppModule implements NestModule {

@@ -1,25 +1,26 @@
+import { ProcessState } from 'src/posts/entities/processState.entity';
 import { PostsLikeDto } from './dto/addPostsLike.dto';
-import { PostsLikeRecord } from 'src/posts/postsLikeRecord.entity';
+import { PostsLikeRecord } from 'src/posts/entities/postsLikeRecord.entity';
 import { CreatePostsComplaintsDto } from './dto/createPostsComplaints.dto';
 import { AcceptOfferedPriceDto } from './dto/acceptOfferedPrice.dto';
 import { ParseFilePipe, ParseIntPipe, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { Resolver, Query, Args, Mutation } from '@nestjs/graphql';
-import { User } from 'src/users/user.entity';
+import { User } from 'src/users/entities/user.entity';
 import { CreatePostDto } from './dto/createPost.dto';
 import { SearchPostDto } from './dto/searchPost.dto';
 import { UpdatePostDto } from './dto/updatePost.dto';
 import { OfferPriceDto } from './dto/offerPrice.dto';
-import { Post } from './post.entity';
-import { PriceOffer } from './priceOffer.entity';
+import { Post } from './entities/post.entity';
+import { PriceOffer } from './entities/priceOffer.entity';
 import { PostService } from './post.service';
-import { PostsComplaint } from './postsComplaint.entity';
+import { PostComplaints } from './entities/postComplaints.entity';
 import { UpdateDealStateDto } from './dto/updateDealState.dto';
 import { GetUser } from 'src/users/validations/getUser.decorator';
 import { JwtAuthGuard } from 'src/users/guards/jwtAuth.guard';
 import { PostImagesValidationPipe } from './pipes/postImages.pipe';
-import { PostsViewRecord } from './postsViewRecord.entity';
+import { PostsViewRecord } from './entities/postsViewRecord.entity';
 import { PostsViewDto } from './dto/addPostsView.dto';
-import { Category } from 'src/categories/category.entity';
+import { Category } from 'src/posts/entities/category.entity';
 
 @Resolver(() => Post)
 @UseGuards(JwtAuthGuard)
@@ -35,39 +36,39 @@ export class PostResolver {
   // 게시글 작성
   @Mutation(() => Post)
   @UsePipes(ValidationPipe)
-  createPost(@GetUser() user: User, @Args('createPostDto', PostImagesValidationPipe) createPostDto: CreatePostDto) {
+  createPost(@GetUser() user: User, @Args('createPostDto', PostImagesValidationPipe) createPostDto: CreatePostDto): Promise<Post> {
     return this.postService.createPost(user, createPostDto);
   }
 
   // 게시글 수정
   @Mutation(() => Post)
-  updatePost(@GetUser() user: User, @Args('postId', ParseIntPipe) postId: number, @Args('updatePostDto', PostImagesValidationPipe) updatePostDto: UpdatePostDto) {
+  updatePost(@GetUser() user: User, @Args('postId', ParseIntPipe) postId: number, @Args('updatePostDto', PostImagesValidationPipe) updatePostDto: UpdatePostDto): Promise<Post> {
     return this.postService.updatePost(user, postId, updatePostDto);
   }
 
   // 게시글 삭제
   @Mutation(() => String)
-  deletePost(@GetUser() user: User, @Args('postId', ParseIntPipe) postId: number) {
+  deletePost(@GetUser() user: User, @Args('postId', ParseIntPipe) postId: number): Promise<string> {
     return this.postService.deletePost(user, postId);
   }
 
   // 게시글 상세보기
   @Query(() => Post, { name: 'post' })
-  getPostById(@Args('postId', ParseIntPipe) postId: number) {
+  getPostById(@Args('postId', ParseIntPipe) postId: number): Promise<Post> {
     return this.postService.getPostById(postId);
   }
 
-  // 게시글 목록 가져오기 (게시글 검색 포함)
+  // 게시글 목록 조회 및 검색
   @Query(() => [Post], { name: 'posts' })
   @UsePipes(ValidationPipe)
-  getPosts(@GetUser() user: User, @Args('searchPostDto') searchPostDto: SearchPostDto) {
+  getPosts(@GetUser() user: User, @Args('searchPostDto') searchPostDto: SearchPostDto): Promise<Post[]> {
     return this.postService.getPosts(user, searchPostDto);
   }
 
   // 게시글 끌올
   @Mutation(() => Post)
   @UsePipes(ValidationPipe)
-  pullupPost(@Args('postId', ParseIntPipe) postId: number) {
+  pullupPost(@Args('postId', ParseIntPipe) postId: number): Promise<Post> {
     return this.postService.pullUpPost(postId);
   }
 
@@ -86,9 +87,9 @@ export class PostResolver {
   }
 
   // 게시글 신고
-  @Mutation(() => PostsComplaint)
+  @Mutation(() => PostComplaints)
   @UsePipes(ValidationPipe)
-  reportPost(@Args('createPostsComplaintDto', ParseFilePipe) createPostsComplaintDto: CreatePostsComplaintsDto): Promise<PostsComplaint> {
+  reportPost(@Args('createPostsComplaintDto', ParseFilePipe) createPostsComplaintDto: CreatePostsComplaintsDto): Promise<PostComplaints> {
     return this.postService.reportPost(createPostsComplaintDto);
   }
 

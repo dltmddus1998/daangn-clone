@@ -4,11 +4,11 @@ import { ChatService } from './chat.service';
 import { Logger } from '@nestjs/common';
 import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayInit, ConnectedSocket, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Socket, Server, Namespace } from 'socket.io';
-import { User } from 'src/users/user.entity';
+import { User } from 'src/users/entities/user.entity';
 import { CreateChatRoomDto } from './dto/createChatRoom.dto';
 import jwt from 'jsonwebtoken';
 import * as config from 'config';
-import { ChatRoom } from './chatRoom.entity';
+import { ChatRoom } from './entities/chatRoom.entity';
 
 const jwtConfig: any = config.get('jwt');
 

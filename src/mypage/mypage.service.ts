@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ParseBoolPipe } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/users/user.entity';
-import { Followings } from '../mypage/followings.entity';
-import { PurchaseHistory } from 'src/mypage/purchaseHistory.entity';
-import { MypageRepository } from './mypage.repository';
+import { User } from 'src/users/entities/user.entity';
+import { Followings } from '../mypage/entities/followings.entity';
+import { PurchaseHistory } from 'src/mypage/entities/purchaseHistory.entity';
+import { MypageRepository } from './repositories/mypage.repository';
 import { FollowDto } from './dto/follow.dto';
 import { PurchaseHistoryDto } from './dto/purchaseHistory.dto';
-import { Post } from 'src/posts/post.entity';
+import { Post } from 'src/posts/entities/post.entity';
 import { GetOtherProfileDto } from './dto/getOtherProfile.dto';
+import { PostsLikeRecord } from 'src/posts/entities/postsLikeRecord.entity';
+import { ProfileType } from 'aws-sdk/clients/transfer';
+import { SellerReview } from 'src/reviews/entities/sellerReview.entity';
+import { BuyerReview } from 'src/reviews/entities/buyerReview.entity';
+import { getRepository } from 'typeorm';
 
 @Injectable()
 export class MypageService {
@@ -36,7 +41,7 @@ export class MypageService {
      * @return {PurchaseHistory} 구매내역 반환
      * @throws {NotFoundException} 구매내역이 추가되지 않아 조회되지 않을 때 예외 처리
      */
-    const insertId = await this.mypageRepository.buy(user, purchaseHistoryDto);
+    const insertId = await this.mypageRepository.buyTransaction(user, purchaseHistoryDto);
     const found = PurchaseHistory.findOne(insertId);
     if (!found) {
       throw new NotFoundException(`${insertId}의 구매내역이 제대로 추가되지 않았습니다.`);
@@ -66,13 +71,13 @@ export class MypageService {
     return await this.mypageRepository.getSellingListOfUser(user, page, perPage);
   }
 
-  async getWatchListOfUser(user: User, page: number, perPage: number): Promise<Post[]> {
+  async getWatchListOfUser(user: User, page: number, perPage: number): Promise<PostsLikeRecord[]> {
     /**
      * 관심목록 조회하기
      *
      * @author 이승연(dltmddus1998)
      * @param {user, page, perPage} 로그인한 유저, 조회할 페이지, 한 페이지당 게시글 개수
-     * @returns {PurchaseHistory[]} 구매내역 전체 리스트 반환
+     * @returns {PostsLikeRecord[]} 구매내역 전체 리스트 반환
      */
     return await this.mypageRepository.getWatchListOfUser(user, page, perPage);
   }
@@ -161,44 +166,78 @@ export class MypageService {
     return await this.mypageRepository.seeFollowUsers(user, page, perPage);
   }
 
-  async getMyProfile(user: User): Promise<Object> {
+  async getMyProfile(user: User): Promise<User> {
     /**
      * 내 프로필 조회하기
      *
      * @author 이승연(dltmddus1998)
      * @param {user}
-     * @returns {userName, profileImage, mannerTemp, respTime, ...}
-     * @throws {}
+     * @returns {userName, profileImage, mannerTemp, respTime}
      */
-    /**
-     * 유저테이블: 닉네임, 프로필 이미지, 매너온도, 응답률
-     * TODO: 받은 매너 평가, 받은 거래 후기
-     */
-    const myProfileFromUser = await this.mypageRepository.getMyProfileFromUser(user);
-    // const data = {
-    //   myProfileFromUser,
-    // };
-    return myProfileFromUser;
+    const userInfo = await this.mypageRepository.getMyProfileFromUser(user);
+    return userInfo;
   }
 
-  async getOtherProfile(getOtherProfileDto: GetOtherProfileDto): Promise<Object> {
+  async getMySellerReview(user: User): Promise<SellerReview[]> {
+    /**
+     * 내 프로필 조회 - 판매자 거래 후기 및 매너 평가 조회
+     *
+     * @author 이승연(dltmddus1998)
+     * @param {user}
+     * @return {SellerReview[]}
+     *
+     */
+    const sellerReviews = await this.mypageRepository.getMySellerReviewList(user);
+    return sellerReviews;
+  }
+
+  async getMyBuyerReview(user: User): Promise<BuyerReview[]> {
+    /**
+     * 내 프로필 조회 - 구매자 거래 후기 및 매너 평가 조회
+     *
+     * @author 이승연(dltmddus1998)
+     * @param {user}
+     * @return {BuyerReivew[]}
+     *
+     */
+    const buyerReviews = await this.mypageRepository.getMyBuyerReviewList(user);
+    return buyerReviews;
+  }
+
+  async getOtherProfile(userName: string): Promise<User> {
     /**
      * 다른 유저 프로필 조회하기
      *
      * @author 이승연(dltmddus1998)
      * @param {getOtherProfileDto} 팔로우하고자 하는 유저 번호
-     * @returns {}
-     * @throws {}
+     * @returns {userName, profileImage, mannerTemp, respTime}
      */
-    /**
-     * 유저테이블: 해당 유저의 닉네임, 프로필 이미지, 매너온도, 응답률
-     * TODO: 받은 매너 평가, 받은 거래 후기
-     */
-    const { phoneNumber } = getOtherProfileDto;
-    const otherProfileFromUser = await this.mypageRepository.getOtherProfileFromUser(phoneNumber);
-    // const data = {
-    //   otherProfileFromUser,
-    // };
+    const otherProfileFromUser = await this.mypageRepository.getOtherProfileFromUser(userName);
     return otherProfileFromUser;
+  }
+
+  async getOtherSellerReview(userName: string): Promise<SellerReview[]> {
+    /**
+     * 다른 유저 프로필 조회 - 판매자 거래 후기 및 매너 평가 조회
+     *
+     * @author 이승연(dltmddus1998)
+     * @param {userName}
+     * @return {SellerReivew[]}
+     */
+    const sellerReviews = await this.mypageRepository.getOtherSellerReviewList(userName);
+    return sellerReviews;
+  }
+
+  async getOtherBuyerReview(userName: string): Promise<BuyerReview[]> {
+    /**
+     * 다른 유저 프로필 조회 - 구매자 거래 후기 및 매너 평가 조회
+     *
+     * @author 이승연(dltmddus1998)
+     * @param {userName}
+     * @return {BuyerReview[]}
+     *
+     */
+    const buyerReviews = await this.mypageRepository.getOtherBuyerReviewList(userName);
+    return buyerReviews;
   }
 }

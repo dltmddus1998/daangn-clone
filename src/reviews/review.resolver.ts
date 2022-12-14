@@ -1,7 +1,7 @@
 import { ParseIntPipe, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { JwtAuthGuard } from 'src/users/guards/jwtAuth.guard';
-import { User } from 'src/users/user.entity';
+import { User } from 'src/users/entities/user.entity';
 import { GetUser } from 'src/users/validations/getUser.decorator';
 import { ReviewDto } from './dto/review.dto';
 import { BuyerReview } from './entities/buyerReview.entity';

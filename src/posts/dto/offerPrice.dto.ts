@@ -1,6 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsNumber, IsNotEmpty } from 'class-validator';
-import { Post } from '../post.entity';
+import { Post } from '../entities/post.entity';
 
 @InputType()
 export class OfferPriceDto {

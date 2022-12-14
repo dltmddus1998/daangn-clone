@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { User } from '../user.entity';
+import { User } from '../entities/user.entity';
 
 /**
  * JwtAuthGuard로부터 반환받은 유저 정보를 req없이 resolver에서 바로 사용하기 위한 custom decorator

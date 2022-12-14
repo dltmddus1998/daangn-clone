@@ -3,7 +3,7 @@ import { Resolver, Query, Args, Mutation } from '@nestjs/graphql';
 import { JoinUserDto } from './dto/joinUser.dto';
 import { InputNumberValidationPipe } from './validations/inputNumber.pipe';
 import { PhoneNumberValidationPipe } from './validations/phoneNumber.pipe';
-import { User } from './user.entity';
+import { User } from './entities/user.entity';
 import { UserService } from './user.service';
 import { LoginUserDto } from './dto/loginUser.dto';
 import { ProfileUserDto } from './dto/profile.dto';
@@ -11,7 +11,7 @@ import { ProfileInputValidationPipe } from './validations/profile.pipe';
 import { JwtAuthGuard } from './guards/jwtAuth.guard';
 import { GetUser } from './validations/getUser.decorator';
 import { MyLocationDto } from './dto/mylocation.dto';
-import { Location } from './location.entity';
+import { Location } from './entities/location.entity';
 import { DeleteTownDto } from './dto/deleteTown.dto';
 import { getRepository } from 'typeorm';
 

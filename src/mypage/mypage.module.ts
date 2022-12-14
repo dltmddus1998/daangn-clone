@@ -1,6 +1,6 @@
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from 'src/users/user.module';
-import { MypageRepository } from './mypage.repository';
+import { MypageRepository } from './repositories/mypage.repository';
 import { MypageResolver } from './mypage.resolver';
 import { MypageService } from './mypage.service';
 import { Module } from '@nestjs/common';

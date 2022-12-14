@@ -1,7 +1,7 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsBoolean, IsNotEmpty, IsNumber, IsString, Length } from 'class-validator';
-import { Category } from 'src/categories/category.entity';
-import { TownRange } from 'src/townRanges/townRange.entity';
+import { Category } from 'src/posts/entities/category.entity';
+import { TownRange } from 'src/posts/entities/townRange.entity';
 import * as GraphQLUpload from 'graphql-upload/GraphQLUpload.js';
 import { FileUpload } from 'src/users/models/fileUpload.model';
 

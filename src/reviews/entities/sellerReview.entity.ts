@@ -1,5 +1,5 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { Post } from 'src/posts/post.entity';
+import { Post } from 'src/posts/entities/post.entity';
 import { BaseEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { ScoreItem } from './scoreItem.entity';
 import { SelectedMannerItemToSeller } from './selectedMannerItemToSeller.entity';

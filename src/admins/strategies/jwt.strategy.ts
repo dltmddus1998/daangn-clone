@@ -17,7 +17,7 @@ const jwtConfig: any = config.get('jwt');
  * @throws {UnauthorizedException} payload에 저장된 정보로 조회했을 때 admin 정보가 없을 경우 예외처리
  */
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'adminJWT') {
   constructor(
     @InjectRepository(AdminRepository)
     private adminRepository: AdminRepository,
@@ -31,7 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: Payload): Promise<Admin> {
     const { adminId } = payload;
-    const admin: Admin = await this.adminRepository.findOne(adminId);
+    const admin: Admin = await this.adminRepository.findOne({ where: { adminId } });
     if (!admin) {
       throw new UnauthorizedException('admin을 찾을 수 없습니다.');
     }
